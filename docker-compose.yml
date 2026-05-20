@@ -1,0 +1,10 @@
+services:
+  openwebif-mcp:
+    build: .
+    container_name: openwebif-mcp
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "${MCP_PORT:-8000}:8000"

@@ -1,0 +1,2 @@
+"""OpenWebif MCP server package."""
+

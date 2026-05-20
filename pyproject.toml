@@ -1,0 +1,24 @@
+[project]
+name = "openwebif-mcp"
+version = "0.1.0"
+description = "MCP server for controlling an Enigma2/Vu+ receiver through OpenWebif."
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.27.0",
+    "mcp[cli]>=1.8.0",
+    "pydantic>=2.7.0",
+]
+
+[project.scripts]
+openwebif-mcp = "openwebif_mcp.server:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
