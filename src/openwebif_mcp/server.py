@@ -4,12 +4,47 @@ import os
 from typing import Annotated, Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from pydantic import Field
 
 from .openwebif import OpenWebifClient, OpenWebifConfig
 
 
-mcp = FastMCP("OpenWebif MCP", stateless_http=True, json_response=True)
+def _transport_security_from_env() -> TransportSecuritySettings:
+    """Build DNS-rebinding-protection settings from MCP_ALLOWED_HOSTS.
+
+    FastMCP auto-enables DNS rebinding protection with a localhost-only host
+    allowlist whenever it is constructed with the default host (127.0.0.1),
+    which makes it reject every non-localhost ``Host`` header with HTTP 421.
+    Because this server binds 0.0.0.0 and is reached by IP / container name /
+    proxy domain, we configure protection explicitly instead of inheriting
+    that localhost-only default.
+
+    Set ``MCP_ALLOWED_HOSTS`` (comma-separated, e.g. ``mcp.example.com,
+    192.168.178.130:8008``) to keep protection on with a real allowlist.
+    Leave it unset to disable protection (appropriate for a trusted LAN).
+    """
+    raw = os.environ.get("MCP_ALLOWED_HOSTS", "").strip()
+    if not raw:
+        return TransportSecuritySettings(enable_dns_rebinding_protection=False)
+
+    hosts = [entry.strip() for entry in raw.split(",") if entry.strip()]
+    origins = [f"http://{host}" for host in hosts] + [f"https://{host}" for host in hosts]
+    return TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=hosts,
+        allowed_origins=origins,
+    )
+
+
+mcp = FastMCP(
+    "OpenWebif MCP",
+    stateless_http=True,
+    json_response=True,
+    host=os.environ.get("MCP_HOST", "0.0.0.0"),
+    port=int(os.environ.get("MCP_PORT", "8000")),
+    transport_security=_transport_security_from_env(),
+)
 client = OpenWebifClient(OpenWebifConfig.from_env())
 
 
@@ -227,10 +262,10 @@ def openwebif_locations() -> Any:
 
 
 def main() -> None:
-    host = os.environ.get("MCP_HOST", "0.0.0.0")
-    port = int(os.environ.get("MCP_PORT", "8000"))
-    mcp.settings.host = host
-    mcp.settings.port = port
+    # Host, port, and transport security are configured at construction time
+    # (see the module-level FastMCP(...) call). Setting host after construction
+    # would not re-evaluate DNS-rebinding protection and is what previously
+    # left it locked to a localhost-only allowlist (HTTP 421 for LAN clients).
     mcp.run(transport="streamable-http")
 
 

@@ -147,6 +147,18 @@ messages, or perform other state-changing actions.
 The local `.env` file is not versioned. Do not publish receiver IP addresses,
 OpenWebif credentials, or other private network details.
 
+## Troubleshooting
+
+**HTTP 421 "Invalid Host header" from the MCP server.** FastMCP's DNS-rebinding
+protection only accepts a fixed allowlist of `Host` headers. This server
+disables that protection by default so clients can reach it by IP, container
+name, or proxy domain on a trusted LAN. To re-enable protection, set
+`MCP_ALLOWED_HOSTS` to the exact host(s) clients use, comma-separated:
+
+```env
+MCP_ALLOWED_HOSTS=mcp.example.com,192.168.178.50:8000
+```
+
 ## OpenWebif Notes
 
 OpenWebif returns JSON responses through `/api/<method>`. Timer creation uses

@@ -6,5 +6,7 @@ services:
     env_file:
       - path: .env
         required: false
+    # MCP_PORT (from .env) drives both the app's bind port inside the
+    # container and the published host port, so they always match.
     ports:
-      - "${MCP_PORT:-8000}:8000"
+      - "${MCP_PORT:-8000}:${MCP_PORT:-8000}"
